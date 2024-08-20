@@ -1,0 +1,81 @@
+from datetime import date
+
+# Definir uma classe ContaBancaria
+class ContaBancaria:
+    
+    # Inicializar a conta com saldo zero e configurações para controle de saques
+    def __init__(self):
+        self.saldo = 0
+        self.historico = []
+        self.saques_diarios = 0
+        self.data_ultimo_saque = None
+
+    # Método para depositar dinheiro na conta
+    def depositar(self, valor):
+        if valor > 0:
+            self.saldo += valor
+            self.historico.append(f"Depósito: +R${valor:.2f}")
+        else:
+            print("Valor inválido para depósito.")
+
+    # Método para sacar dinheiro da conta
+    def sacar(self, valor):
+        # Verificar se é um novo dia e resetar contagem de saques diários
+        if self.data_ultimo_saque != date.today():
+            self.saques_diarios = 0
+            self.data_ultimo_saque = date.today()
+
+        # Verificar as condições de saque
+        if self.saques_diarios < 3 and 0 < valor <= 500:
+            if valor <= self.saldo:
+                self.saldo -= valor
+                self.saques_diarios += 1
+                self.historico.append(f"Saque: -R${valor:.2f}")
+                print(f"Saque de R${valor:.2f} realizado com sucesso.")
+            else:
+                print("Saldo insuficiente.")
+        elif self.saques_diarios >= 3:
+            print("Limite diário de saques atingido.")
+        elif valor > 500:
+            print("O valor máximo por saque é R$ 500,00.")
+        else:
+            print("Valor inválido para saque.")
+
+    # Método para mostrar o extrato da conta
+    def exibir_extrato(self):
+        print("Extrato:")
+        for transacao in self.historico:
+            print(transacao)
+        print(f"Saldo atual: R${self.saldo:.2f}")
+
+# Exemplo de uso do sistema bancário
+if __name__ == "__main__":
+    conta = ContaBancaria()
+    
+    # Exibir opções para o usuário
+    while True:
+        print("\nEscolha uma operação:")
+        print("1. Depósito")
+        print("2. Saque")
+        print("3. Extrato")
+        print("4. Sair")
+        
+        escolha = input("Digite a opção desejada: ")
+        
+        if escolha == "1":
+            valor = float(input("Digite o valor do depósito: R$"))
+            conta.depositar(valor)
+        
+        elif escolha == "2":
+            valor = float(input("Digite o valor do saque: R$"))
+            conta.sacar(valor)
+        
+        elif escolha == "3":
+            conta.exibir_extrato()
+        
+        elif escolha == "4":
+            print("Saindo do sistema bancário...")
+            break
+        
+        else:
+            print("Opção inválida. Tente novamente.")
