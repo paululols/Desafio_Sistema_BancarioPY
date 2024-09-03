@@ -1,0 +1,155 @@
+import datetime
+
+def depositar(contas, numero_conta, valor):
+    conta = buscar_conta(numero_conta, contas)
+    if not conta:
+        return "Operação falhou! Conta não encontrada. Por favor, crie uma conta antes de fazer um depósito."
+
+    if valor <= 0:
+        return "Operação falhou! O valor informado é inválido.", conta['saldo'], conta['extrato']
+
+    data_hora = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+    conta['saldo'] += valor
+    conta['extrato'] += f"{data_hora} - Depósito: R$ {valor:.2f}\n"
+    return None, conta['saldo'], conta['extrato']
+
+def buscar_conta(numero_conta, contas):
+    for conta in contas:
+        if conta["numero_conta"] == numero_conta:
+            return conta
+    return None
+
+def criar_usuario(usuarios):
+    cpf = input("Informe o CPF (somente números): ")
+    if buscar_usuario(cpf, usuarios):
+        return "Já existe um usuário com esse CPF!"
+
+    nome = input("Informe o nome completo: ")
+    data_nascimento = input("Informe a data de nascimento (dd-mm-aaaa): ")
+    endereco = input("Informe o endereço (logradouro, número, bairro, cidade/UF): ")
+
+    usuarios.append({"nome": nome, "data_nascimento": data_nascimento, "cpf": cpf, "endereco": endereco})
+    return "Usuário criado com sucesso!"
+
+def buscar_usuario(cpf, usuarios):
+    for usuario in usuarios:
+        if usuario["cpf"] == cpf:
+            return usuario
+    return None
+
+def criar_conta(agencia, numero_conta, usuarios, contas):
+    cpf = input("Informe o CPF do usuário: ")
+    usuario = buscar_usuario(cpf, usuarios)
+
+    if not usuario:
+        return "Usuário não encontrado! Cadastro de conta não realizado."
+
+    contas.append({"agencia": agencia, "numero_conta": numero_conta, "usuario": usuario, "saldo": 0, "extrato": ""})
+    return "Conta criada com sucesso!"
+
+def listar_contas(contas):
+    for conta in contas:
+        print(f"\nAgência: {conta['agencia']} | Conta: {conta['numero_conta']} | Titular: {conta['usuario']['nome']}")
+
+def visualizar_extrato(conta):
+    print("\n================ EXTRATO ================")
+    print("Não foram realizadas movimentações." if not conta['extrato'] else conta['extrato'])
+    print(f"\nSaldo: R$ {conta['saldo']:.2f}")
+    print("==========================================")
+
+def sacar(*, saldo, valor, extrato, limite, numero_saques, limite_saques):
+    if valor > saldo:
+        return "Operação falhou! Você não tem saldo suficiente.", saldo, extrato
+    elif valor > limite:
+        return "Operação falhou! O valor do saque excede o limite.", saldo, extrato
+    elif numero_saques >= limite_saques:
+        return "Operação falhou! Número máximo de saques excedido.", saldo, extrato
+    elif valor <= 0:
+        return "Operação falhou! O valor informado é inválido.", saldo, extrato
+
+    data_hora = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+    saldo -= valor
+    extrato += f"{data_hora} - Saque: R$ {valor:.2f}\n"
+    numero_saques += 1
+
+    return None, saldo, extrato
+
+def main():
+    usuarios = []
+    contas = []
+    AGENCIA = "0001"
+    numero_conta = 1
+
+    menu = """
+    [d] Depositar
+    [s] Sacar
+    [e] Extrato
+    [nu] Novo Usuário
+    [cc] Criar Conta
+    [lc] Listar Contas
+    [q] Sair
+    => """
+
+    while True:
+        opcao = input(menu)
+
+        if opcao == "d":
+            try:
+                numero_conta_input = int(input("Informe o número da conta para depósito: "))
+                valor = float(input("Informe o valor do depósito: "))
+                mensagem, saldo, extrato = depositar(contas, numero_conta_input, valor)
+                if mensagem:
+                    print(mensagem)
+            except ValueError:
+                print("Erro! O valor informado não é válido. Tente novamente.")
+
+        elif opcao == "s":
+            try:
+                numero_conta_input = int(input("Informe o número da conta para saque: "))
+                conta = buscar_conta(numero_conta_input, contas)
+                if not conta:
+                    print("Operação falhou! Conta não encontrada.")
+                    continue
+
+                valor = float(input("Informe o valor do saque: "))
+                mensagem, conta['saldo'], conta['extrato'] = sacar(
+                    saldo=conta['saldo'], valor=valor, extrato=conta['extrato'], limite=500,
+                    numero_saques=conta.get('numero_saques', 0), limite_saques=3
+                )
+                if mensagem:
+                    print(mensagem)
+            except ValueError:
+                print("Erro! O valor informado não é válido. Tente novamente.")
+
+        elif opcao == "e":
+            try:
+                numero_conta_input = int(input("Informe o número da conta para visualizar o extrato: "))
+                conta = buscar_conta(numero_conta_input, contas)
+                if not conta:
+                    print("Operação falhou! Conta não encontrada.")
+                    continue
+                visualizar_extrato(conta)
+            except ValueError:
+                print("Erro! O número da conta informado não é válido. Tente novamente.")
+
+        elif opcao == "nu":
+            mensagem = criar_usuario(usuarios)
+            print(mensagem)
+
+        elif opcao == "cc":
+            mensagem = criar_conta(AGENCIA, numero_conta, usuarios, contas)
+            print(mensagem)
+            if mensagem == "Conta criada com sucesso!":
+                numero_conta += 1
+
+        elif opcao == "lc":
+            listar_contas(contas)
+
+        elif opcao == "q":
+            break
+
+        else:
+            print("Operação inválida, por favor selecione novamente a operação desejada.")
+
+if __name__ == "__main__":
+    main()
